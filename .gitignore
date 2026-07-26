@@ -1,0 +1,29 @@
+# Environments
+venv/
+env/
+.env
+
+# PyPI Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDEs
+.vscode/
+.idea/
+
+# OS hidden files
+.DS_Store
+Thumbs.db
+
+# Test outputs
+test_output.jpg
+.pytest_cache/
+.coverage
