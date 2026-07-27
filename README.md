@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/RichardHtunn/aspect-pad/actions/workflows/test.yml/badge.svg)
 ![PyPI - Version](https://img.shields.io/pypi/v/aspect-pad)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad?v=2)
 ![PyPI - License](https://img.shields.io/pypi/l/aspect-pad?v=2)
 
 **The tensor-native letterbox transform for GPU-resident pipelines.**
