@@ -1,9 +1,9 @@
 # Aspect-Pad 📐
 
 ![CI](https://github.com/RichardHtunn/aspect-pad/actions/workflows/test.yml/badge.svg)
-![PyPI - Version](https://img.shields.io/pypi/v/aspect-pad)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad)
-![PyPI - License](https://img.shields.io/pypi/l/aspect-pad)
+![PyPI - Version](https://img.shields.io/pypi/v/aspect-pad?v=1)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad?v=1)
+![PyPI - License](https://img.shields.io/pypi/l/aspect-pad?v=1)
 
 A lightweight, PyTorch-compatible computer vision transform that perfectly scales and mathematically pads images without distorting their aspect ratios. 
 
