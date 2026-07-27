@@ -1,5 +1,10 @@
 # Aspect-Pad 📐
 
+![CI](https://github.com/RichardHtunn/aspect-pad/actions/workflows/test.yml/badge.svg)
+![PyPI - Version](https://img.shields.io/pypi/v/aspect-pad)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad)
+![PyPI - License](https://img.shields.io/pypi/l/aspect-pad)
+
 A lightweight, PyTorch-compatible computer vision transform that perfectly scales and mathematically pads images without distorting their aspect ratios. 
 
 When feeding unconstrained real-world images (like drone photography, medical scans, or OCR inputs) into Convolutional Neural Networks (CNNs), standard resizing often squishes and warps the data. **Aspect-Pad** intelligently scales the image and dynamically pads the remaining space to create a perfect square (or custom rectangle) tensor, preserving the original spatial features of your dataset.
