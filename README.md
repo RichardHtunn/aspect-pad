@@ -1,52 +1,103 @@
 # Aspect-Pad 📐
 
 ![CI](https://github.com/RichardHtunn/aspect-pad/actions/workflows/test.yml/badge.svg)
-![PyPI - Version](https://img.shields.io/pypi/v/aspect-pad?v=1)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad?v=1)
-![PyPI - License](https://img.shields.io/pypi/l/aspect-pad?v=1)
+![PyPI - Version](https://img.shields.io/pypi/v/aspect-pad)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aspect-pad)
+![PyPI - License](https://img.shields.io/pypi/l/aspect-pad?v=2)
 
-A lightweight, PyTorch-compatible computer vision transform that perfectly scales and mathematically pads images without distorting their aspect ratios. 
+**The tensor-native letterbox transform for GPU-resident pipelines.**
 
-When feeding unconstrained real-world images (like drone photography, medical scans, or OCR inputs) into Convolutional Neural Networks (CNNs), standard resizing often squishes and warps the data. **Aspect-Pad** intelligently scales the image and dynamically pads the remaining space to create a perfect square (or custom rectangle) tensor, preserving the original spatial features of your dataset.
+Aspect-Pad is a blazing-fast, PyTorch-native computer vision transform that perfectly scales and mathematically pads images without distorting their aspect ratios (commonly known as "letterboxing"). 
 
-## 🚀 Installation
+Unlike standard OpenCV or PIL implementations that bottleneck on the CPU, Aspect-Pad is built entirely on `torch.nn.functional`. It operates directly on native PyTorch Tensors (`[C, H, W]` or `[B, C, H, W]`), allowing you to offload padding math to the GPU and process entire batches simultaneously.
+
+## Why Aspect-Pad?
+* **100% PyTorch Native:** No OpenCV (`cv2`), `Pillow`, or `numpy` dependencies required.
+* **GPU Accelerated:** Executes directly on CUDA cores.
+* **Batch Processing:** Natively handles `[B, C, H, W]` dimensions to pad dozens of images simultaneously.
+* **Lightweight:** A highly specific utility tool without the massive overhead of standard augmentation libraries.
+
+---
+
+## Performance: CPU vs. GPU
+
+Aspect-Pad is designed specifically for environments where your data is already on the GPU (e.g., on-the-fly augmentation, batched inference, or NVIDIA DALI-style workflows). 
+
+If you are doing CPU-side preprocessing in a standard `DataLoader`, standard OpenCV (like YOLO's `letterbox`) is highly optimized C++ and will be faster. But once your data is passed to CUDA, Aspect-Pad's native tensor implementation dominates, particularly at batch scale.
+
+**Hardware:** Nvidia T4 GPU / Intel Xeon CPU  
+**Task:** Scale & pad 1920x1080 images to 512x512 squares.
+
+| Benchmark | YOLO (OpenCV/CPU) | Aspect-Pad (Tensor/CUDA) | Winner |
+| :--- | :--- | :--- | :--- |
+| **Single Image (1,000x)** | 1.04s (CPU) | 2.82s (CPU) | YOLO (2.7x Faster) |
+| **Single Image (1,000x)** | 0.94s (CPU)* | **0.10s (GPU)** | **Aspect-Pad (9.0x Faster)** |
+| **Batch Size 32 (100x)** | 2.37s (Looping) | **0.30s (Batched)** | **Aspect-Pad (7.8x Faster)** |
+
+*\*OpenCV remains CPU-bound even in a CUDA environment.*
+
+---
+
+## Installation
 
 You can install the package directly from PyPI:
 
 ```bash
 pip install aspect-pad
 ```
-## 💻 Quick Start
+Requires Python >= 3.7 and PyTorch
 
-Aspect-Pad works natively with PIL Images and drops directly into standard PyTorch transforms.
+## Usage
+
+Aspect-Pad is designed to drop seamlessly into any modern PyTorch pipeline. It strictly expects a torch.Tensor, meaning you can pass data directly from your loader to the GPU without converting back to PIL or NumPy.
+
+### Basic Initialization
 
 ```python
-import torchvision.transforms as transforms
-from PIL import Image
+import torch
 from aspect_pad import AspectPad
 
-# Load a raw, irregularly-shaped image
-raw_image = Image.open("messy_drone_photo.jpg")
+# Initialize the padder (creates a 512x512 square, padded with zeros/black)
+padder = AspectPad(target_size=512, fill=0)
 
-# Target a 512x512 square tensor, dynamically padding the empty space with black (0)
-pipeline = transforms.Compose([
-    AspectPad(target_size=512, fill=0),
-    transforms.ToTensor()
-])
-
-# Pass the image through the pipeline
-tensor_image = pipeline(raw_image)
-print(tensor_image.shape) # Output: torch.Size([3, 512, 512])
+# You can also specify rectangular targets
+rect_padder = AspectPad(target_size=(256, 512), fill=128)
 ```
-## ⚙️ Features
 
-* Drop-in PyTorch Compatibility: Built to work flawlessly inside torchvision.transforms.Compose.
+### Example 1: Single Image Tensor [C, H, W]
 
-* Universal "Anti-Squish" Math: Automatically calculates the delta for wide or tall images and centers the original image perfectly.
+```python
+# Create a dummy 1080p image tensor and move it to GPU
+image = torch.rand(3, 1080, 1920).cuda()
 
-* Custom Target Sizes: Target a single integer for standard square CNNs (e.g., 224 for ResNet) or pass a tuple for specific architectures (e.g., (1920, 1080)).
+padded_image = padder(image)
+print(padded_image.shape) 
+# Output: torch.Size([3, 512, 512])
+```
 
-* Custom Fill Colors: Support for grayscale padding (e.g., 0 for black), RGB padding (e.g., (255, 255, 255) for white), or any arbitrary background color.
+### Example 2: Batched Tensors [B, C, H, W]
 
----
+```python
+# Create a dummy batch of 32 1080p images
+batch = torch.rand(32, 3, 1080, 1920).cuda()
+
+padded_batch = padder(batch) 
+print(padded_batch.shape) 
+# Output: torch.Size([32, 3, 512, 512]) (Processed simultaneously)
+```
+
+### Example 3: Torchvision Compose Pipeline
+
+```python
+import torchvision.transforms.v2 as v2
+
+# Integrate Aspect-Pad directly into a standard v2 pipeline
+transform_pipeline = v2.Compose([
+    v2.ToImage(),
+    v2.ToDtype(torch.float32, scale=True),
+    AspectPad(target_size=640, fill=0),
+    v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+```
+
 **Author:** Shin Thant Tun

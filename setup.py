@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="aspect-pad",
-    version="0.1.2", # Bumped to 0.1.2 for metadata update
+    version="0.2.0",
     author="Shin Thant Tun",
     description="A PyTorch-compatible transform for aspect-aware image scaling and dynamic mathematical padding.",
     long_description=long_description,
