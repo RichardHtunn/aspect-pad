@@ -22,9 +22,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pillow
-        # Install the package itself in editable mode
-        pip install -e .
+        # Explicitly install the much smaller CPU version of PyTorch for CI
+        pip install torch --index-url https://download.pytorch.org/whl/cpu
+        # Install your aspect-pad package
+        pip install .
     - name: Run unit tests
       run: |
         python -m unittest discover tests
