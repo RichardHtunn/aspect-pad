@@ -39,6 +39,19 @@ If you are doing CPU-side preprocessing in a standard `DataLoader`, standard Ope
 
 ---
 
+## Benchmark Scaling Results
+
+| Batch | OpenCV FPS | Aspect-Pad FPS | Speedup |
+| :--- | :--- | :--- | :--- |
+| 1 | 1238.6 | 6599.0 | 5.33x |
+| 4 | 1583.5 | 7068.0 | 4.59x |
+| 8 | 1479.1 | 7145.7 | 4.83x |
+| 16 | 1395.1 | 6969.9 | 5.00x |
+| 32 | 1232.5 | 7007.6 | 5.69x |
+| 64 | 1423.0 | 6845.0 | 4.81x |
+
+---
+
 ## Installation
 
 You can install the package directly from PyPI:
