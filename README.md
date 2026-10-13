@@ -6,42 +6,30 @@
 ![PyPI - License](https://img.shields.io/pypi/l/aspect-pad?v=2)
 [![Total Downloads](https://img.shields.io/pepy/dt/aspect-pad)](https://pepy.tech/project/aspect-pad)
 
-**The tensor-native letterbox transform for GPU-resident pipelines.**
+**Letterbox resizing for PyTorch tensors, including GPU-resident batches.**
 
-Aspect-Pad is a blazing-fast, PyTorch-native computer vision transform that perfectly scales and mathematically pads images without distorting their aspect ratios (commonly known as "letterboxing"). 
+Aspect-Pad resizes and pads image tensors to a requested height and width while preserving their aspect ratio. It accepts `[C, H, W]` images and `[B, C, H, W]` batches.
 
-Unlike standard OpenCV or PIL implementations that bottleneck on the CPU, Aspect-Pad is built entirely on `torch.nn.functional`. It operates directly on native PyTorch Tensors (`[C, H, W]` or `[B, C, H, W]`), allowing you to offload padding math to the GPU and process entire batches simultaneously.
+The transform uses `torch.nn.functional` and runs on the input tensor's device. It uses bilinear interpolation, centers the resized image, and fills the remaining pixels with a constant value. The output retains the input dtype. Integer and half-precision tensors are interpolated in float32 before conversion back; float32 and float64 retain their precision.
 
 ## Why Aspect-Pad?
-* **100% PyTorch Native:** No OpenCV (`cv2`), `Pillow`, or `numpy` dependencies required.
-* **GPU Accelerated:** Executes directly on CUDA cores.
-* **Batch Processing:** Natively handles `[B, C, H, W]` dimensions to pad dozens of images simultaneously.
-* **Lightweight:** A highly specific utility tool without the massive overhead of standard augmentation libraries.
+* **PyTorch only:** No OpenCV, Pillow, or NumPy runtime dependency.
+* **Device aware:** Runs on CPU or CUDA according to the input tensor.
+* **Batch processing:** Applies the same resize and padding to a batch of equal-size images.
 
 ---
 
-## Performance: CPU vs. GPU
+## Performance
 
-Aspect-Pad is designed specifically for environments where your data is already on the GPU (e.g., on-the-fly augmentation, batched inference, or NVIDIA DALI-style workflows). 
+Aspect-Pad is intended for pipelines where tensors are already on the GPU. CPU-to-GPU transfer can outweigh any benefit if source images start on the CPU. Run `python benchmarks/benchmark.py` with `numpy` and `opencv-python` installed to compare a sequential OpenCV CPU loop with a batched Aspect-Pad tensor on your hardware.
 
-If you are doing CPU-side preprocessing in a standard `DataLoader`, standard OpenCV (like YOLO's `letterbox`) is highly optimized C++ and will be faster. But once your data is passed to CUDA, Aspect-Pad's native tensor implementation dominates, particularly at batch scale.
+The benchmark excludes input creation and CPU-to-GPU transfer. OpenCV receives uint8 CPU images, while Aspect-Pad receives float32 tensors on the selected device, so the measurements describe these workflows rather than an end-to-end speedup for identical inputs. CUDA timing is synchronized.
 
-**Hardware:** Nvidia T4 GPU / Intel Xeon CPU  
-**Task:** Scale & pad 1920x1080 images to 512x512 squares.
+### Previous scaling measurements
 
-| Benchmark | YOLO (OpenCV/CPU) | Aspect-Pad (Tensor/CUDA) | Winner |
-| :--- | :--- | :--- | :--- |
-| **Single Image (1,000x)** | 1.04s (CPU) | 2.82s (CPU) | YOLO (2.7x Faster) |
-| **Single Image (1,000x)** | 0.94s (CPU)* | **0.10s (GPU)** | **Aspect-Pad (9.0x Faster)** |
-| **Batch Size 32 (100x)** | 2.37s (Looping) | **0.30s (Batched)** | **Aspect-Pad (7.8x Faster)** |
+NVIDIA T4 GPU and Intel Xeon CPU; 1920 × 1080 input to 512 × 512 output. These are historical measurements and will vary by hardware and input pipeline.
 
-*\*OpenCV remains CPU-bound even in a CUDA environment.*
-
----
-
-## Benchmark Scaling Results
-
-| Batch | OpenCV FPS | Aspect-Pad FPS | Speedup |
+| Batch | OpenCV FPS | Aspect-Pad FPS | Workflow ratio |
 | :--- | :--- | :--- | :--- |
 | 1 | 1238.6 | 6599.0 | 5.33x |
 | 4 | 1583.5 | 7068.0 | 4.59x |
@@ -54,16 +42,16 @@ If you are doing CPU-side preprocessing in a standard `DataLoader`, standard Ope
 
 ## Installation
 
-You can install the package directly from PyPI:
+Install the published package from PyPI:
 
 ```bash
 pip install aspect-pad
 ```
-Requires Python >= 3.7 and PyTorch
+Python 3.7 or later is declared in the package metadata. Version 0.2.1 declares PyTorch as a runtime dependency. If you use version 0.2.0, install `torch` separately.
 
 ## Usage
 
-Aspect-Pad is designed to drop seamlessly into any modern PyTorch pipeline. It strictly expects a torch.Tensor, meaning you can pass data directly from your loader to the GPU without converting back to PIL or NumPy.
+Aspect-Pad expects a `torch.Tensor`. The examples work on CPU and use CUDA when available.
 
 ### Basic Initialization
 
@@ -81,8 +69,9 @@ rect_padder = AspectPad(target_size=(256, 512), fill=128)
 ### Example 1: Single Image Tensor [C, H, W]
 
 ```python
-# Create a dummy 1080p image tensor and move it to GPU
-image = torch.rand(3, 1080, 1920).cuda()
+# Create a dummy 1080p image tensor
+device = "cuda" if torch.cuda.is_available() else "cpu"
+image = torch.rand(3, 1080, 1920, device=device)
 
 padded_image = padder(image)
 print(padded_image.shape) 
@@ -93,7 +82,7 @@ print(padded_image.shape)
 
 ```python
 # Create a dummy batch of 32 1080p images
-batch = torch.rand(32, 3, 1080, 1920).cuda()
+batch = torch.rand(32, 3, 1080, 1920, device=device)
 
 padded_batch = padder(batch) 
 print(padded_batch.shape) 

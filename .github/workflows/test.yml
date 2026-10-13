@@ -26,6 +26,8 @@ jobs:
         pip install torch --index-url https://download.pytorch.org/whl/cpu
         # Install your aspect-pad package
         pip install .
+        python -c "from importlib.metadata import requires; assert 'torch' in requires('aspect-pad')"
+        python -m pip check
     - name: Run unit tests
       run: |
         python -m unittest discover tests

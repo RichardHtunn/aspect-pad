@@ -7,7 +7,13 @@ class AspectPad:
     its aspect ratio, padding the remaining space to fit a target size.
     """
     def __init__(self, target_size, fill=0):
-        self.target_size = target_size if isinstance(target_size, tuple) else (target_size, target_size)
+        if isinstance(target_size, int) and not isinstance(target_size, bool):
+            target_size = (target_size, target_size)
+        if (not isinstance(target_size, tuple) or len(target_size) != 2
+                or any(not isinstance(side, int) or isinstance(side, bool) or side <= 0
+                       for side in target_size)):
+            raise ValueError("target_size must be a positive integer or a pair of positive integers")
+        self.target_size = target_size
         self.fill = fill
 
     def __call__(self, tensor_img):
@@ -20,15 +26,20 @@ class AspectPad:
         elif original_dim != 4:
             raise ValueError(f"Expected a 3D or 4D tensor, but got {original_dim}D.")
 
-        _, _, h, w = tensor_img.shape
+        batch, channels, h, w = tensor_img.shape
+        if batch == 0 or channels == 0:
+            raise ValueError("Batch size and channel count must be positive")
+        if h == 0 or w == 0:
+            raise ValueError("Image height and width must be positive")
         target_h, target_w = self.target_size
 
         scale = min(target_w / w, target_h / h)
-        new_w = int(w * scale)
-        new_h = int(h * scale)
+        new_w = max(1, int(w * scale))
+        new_h = max(1, int(h * scale))
 
         original_dtype = tensor_img.dtype
-        tensor_img = tensor_img.to(torch.float32)
+        if original_dtype not in (torch.float32, torch.float64):
+            tensor_img = tensor_img.to(torch.float32)
         
         resized = F.interpolate(tensor_img, size=(new_h, new_w), mode="bilinear", align_corners=False)
         resized = resized.to(original_dtype)

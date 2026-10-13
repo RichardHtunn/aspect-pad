@@ -4,7 +4,8 @@ across a range of batch sizes, to check whether GPU kernel-launch overhead
 erodes the speedup at small batch sizes.
 
 USAGE:
-    python benchmark_batch_scaling.py
+    pip install numpy opencv-python
+    python benchmarks/benchmark.py
 
 NOTES:
 - torch.cuda.synchronize() is called before/after every GPU-timed block.
@@ -13,10 +14,10 @@ NOTES:
   that don't reflect real GPU completion time. This is the #1 mistake
   people make when benchmarking GPU code, and it's exactly what the
   kernel-launch-overhead question is probing for.
-- Adjust `from aspect_pad import ...` below to match your actual v0.2.0
-  API if the class/function name differs. This script assumes a
-  transform that accepts a [B, C, H, W] CUDA tensor and returns a
-  letterboxed [B, C, target, target] tensor.
+- Input creation and CPU-to-GPU transfer are excluded from the timed blocks.
+- OpenCV receives uint8 CPU images; Aspect-Pad receives float32 tensors on
+  the selected device. This measures these specific workflows, not an
+  end-to-end speedup for identical inputs.
 """
 
 import time
@@ -24,8 +25,7 @@ import numpy as np
 import cv2
 import torch
 
-# ---- Adjust this import to your actual package API ----
-from aspect_pad import AspectPad  # or BatchAspectPad, etc.
+from aspect_pad import AspectPad
 
 TARGET_SIZE = 512
 IMG_H, IMG_W = 1080, 1920
