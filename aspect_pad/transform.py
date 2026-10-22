@@ -33,9 +33,14 @@ class AspectPad:
             raise ValueError("Image height and width must be positive")
         target_h, target_w = self.target_size
 
-        scale = min(target_w / w, target_h / h)
-        new_w = max(1, int(w * scale))
-        new_h = max(1, int(h * scale))
+        # Integer ratios avoid losing a pixel on the limiting axis when
+        # floating-point multiplication yields e.g. 14.999999999999998.
+        if target_w * h <= target_h * w:
+            new_w = target_w
+            new_h = max(1, h * target_w // w)
+        else:
+            new_h = target_h
+            new_w = max(1, w * target_h // h)
 
         original_dtype = tensor_img.dtype
         if original_dtype not in (torch.float32, torch.float64):

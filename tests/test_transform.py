@@ -76,6 +76,17 @@ class TestAspectPad(unittest.TestCase):
         result = AspectPad(3)(torch.ones(1, 1, 1000))
         self.assertEqual(result.shape, (1, 3, 3))
 
+    def test_limiting_axis_reaches_target_without_rounding_loss(self):
+        for h, w, target_h, target_w, expected_content in (
+            (243, 179, 116, 15, (20, 15)),
+            (46, 181, 13, 189, (13, 51)),
+        ):
+            with self.subTest(input_hw=(h, w), target_hw=(target_h, target_w)):
+                output = AspectPad((target_h, target_w), fill=-17)(torch.ones(1, h, w))
+                rows, columns = torch.where(output[0] != -17)
+                self.assertEqual((rows.max().item() - rows.min().item() + 1,
+                                  columns.max().item() - columns.min().item() + 1), expected_content)
+
     def test_float64_precision(self):
         image = torch.tensor([[[1.0, 1.0 + 1e-9]]], dtype=torch.float64)
         result = AspectPad((2, 4))(image)

@@ -9,6 +9,9 @@ dist/
 *.egg-info/
 *.egg
 
+# Generated papers and Zenodo upload packages
+/output/
+
 # Python cache
 __pycache__/
 *.pyc

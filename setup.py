@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="aspect-pad",
-    version="0.2.1",
+    version="0.2.2.dev0",
     author="Shin Thant Tun",
     license="MIT",
     url="https://github.com/RichardHtunn/aspect-pad",

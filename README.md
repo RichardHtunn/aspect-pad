@@ -47,7 +47,7 @@ Install the published package from PyPI:
 ```bash
 pip install aspect-pad
 ```
-Python 3.7 or later is declared in the package metadata. Version 0.2.1 declares PyTorch as a runtime dependency. If you use version 0.2.0, install `torch` separately.
+Python 3.7 or later is declared in the package metadata. As of 21 October 2026, PyPI lists 0.2.0 as its latest release; install `torch` separately if needed for that release. This source checkout is an unreleased `0.2.2.dev0` development snapshot and declares PyTorch as a runtime dependency.
 
 ## Usage
 
